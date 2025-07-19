@@ -4,6 +4,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeBtn = document.getElementById('closeBtn');
     const envelopeFlap = document.querySelector('.envelope-flap');
     const envelopeSeal = document.querySelector('.envelope-seal');
+    
+    // Music controls
+    const musicToggle = document.getElementById('musicToggle');
+    const backgroundMusic = document.getElementById('backgroundMusic');
+    let isMusicPlaying = false;
 
     // Open letter when envelope is clicked
     envelope.addEventListener('click', function() {
@@ -239,4 +244,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(petalStyle);
+
+    // Music toggle functionality
+    musicToggle.addEventListener('click', function() {
+        if (isMusicPlaying) {
+            backgroundMusic.pause();
+            musicToggle.textContent = '🎵';
+            musicToggle.classList.remove('playing');
+            isMusicPlaying = false;
+        } else {
+            backgroundMusic.play().then(() => {
+                musicToggle.textContent = '⏸️';
+                musicToggle.classList.add('playing');
+                isMusicPlaying = true;
+            }).catch(error => {
+                console.log('Music autoplay blocked:', error);
+                // Show a message to user to click to enable music
+                musicToggle.textContent = '🔇';
+            });
+        }
+    });
+
+    // Auto-play music when letter opens (if user has interacted)
+    envelope.addEventListener('click', function() {
+        if (!isMusicPlaying && backgroundMusic.readyState >= 2) {
+            setTimeout(() => {
+                backgroundMusic.play().then(() => {
+                    musicToggle.textContent = '⏸️';
+                    musicToggle.classList.add('playing');
+                    isMusicPlaying = true;
+                }).catch(error => {
+                    console.log('Music autoplay blocked:', error);
+                });
+            }, 1000);
+        }
+    });
+
+    // Handle music ending
+    backgroundMusic.addEventListener('ended', function() {
+        if (backgroundMusic.loop) {
+            // If looped, it should continue playing
+            return;
+        }
+        musicToggle.textContent = '🎵';
+        musicToggle.classList.remove('playing');
+        isMusicPlaying = false;
+    });
 }); 
