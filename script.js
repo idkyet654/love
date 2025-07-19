@@ -10,6 +10,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const backgroundMusic = document.getElementById('backgroundMusic');
     let isMusicPlaying = false;
 
+    const letterBody = document.querySelector('.letter-body');
+    let originalLetterHTML = letterBody.innerHTML;
+    let typewriterTimeouts = [];
+
+    // Typewriter animation for the letter
+    function typeLetter(element, html, speed = 55, paragraphDelay = 550) {
+        // Clear previous content and timeouts
+        element.innerHTML = '';
+        typewriterTimeouts.forEach(clearTimeout);
+        typewriterTimeouts = [];
+
+        // Split by paragraphs
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const paragraphs = Array.from(tempDiv.children);
+
+        let pIndex = 0;
+        let charIndex = 0;
+        let currentP = null;
+
+        function typeNextChar() {
+            if (!currentP) {
+                if (pIndex >= paragraphs.length) return;
+                currentP = document.createElement(paragraphs[pIndex].tagName);
+                // Copy class if present (for .date, .signature)
+                if (paragraphs[pIndex].className) {
+                    currentP.className = paragraphs[pIndex].className;
+                }
+                element.appendChild(currentP);
+                charIndex = 0;
+            }
+            const text = paragraphs[pIndex].innerHTML;
+            // For signature, allow <br> tags
+            if (currentP.classList.contains('signature')) {
+                // Type out as HTML, but reveal char by char
+                let plain = text.replace(/<br\s*\/?>(?!$)/g, '\n');
+                let shown = plain.slice(0, charIndex + 1).replace(/\n/g, '<br>');
+                currentP.innerHTML = shown;
+            } else {
+                currentP.innerHTML = text.slice(0, charIndex + 1);
+            }
+            charIndex++;
+            if (charIndex < text.length) {
+                typewriterTimeouts.push(setTimeout(typeNextChar, speed));
+            } else {
+                pIndex++;
+                currentP = null;
+                typewriterTimeouts.push(setTimeout(typeNextChar, paragraphDelay));
+            }
+        }
+        typeNextChar();
+    }
+
     // Open letter when envelope is clicked
     envelope.addEventListener('click', function() {
         // Animate envelope opening
@@ -24,6 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add some sparkle effect
             createSparkles();
+            // Start typewriter effect
+            typeLetter(letterBody, originalLetterHTML);
         }, 500);
     });
 
@@ -49,13 +104,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeLetter() {
         letterModal.style.display = 'none';
         document.body.style.overflow = 'auto';
-        
         // Reset envelope animation
         setTimeout(() => {
             envelopeFlap.style.transform = 'rotateX(0deg)';
             envelopeSeal.style.transform = 'translate(-50%, -50%) scale(1)';
             envelopeSeal.style.opacity = '1';
         }, 300);
+        // Restore full letter text and clear typewriter
+        typewriterTimeouts.forEach(clearTimeout);
+        typewriterTimeouts = [];
+        letterBody.innerHTML = originalLetterHTML;
     }
 
     // Create sparkle effect when letter opens
